@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">BqDropboxApp</string>
+
+    <string name="dropbox_api_key_manifest">db-g8rpsokv35v3y56</string>
+    <string name="dropbox_api_key">g8rpsokv35v3y56</string>
+    <string name="dropbox_api_secret">qwnsfjs98f9sluq</string>
+
+
 </resources>
