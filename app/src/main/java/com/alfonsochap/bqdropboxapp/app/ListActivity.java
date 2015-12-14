@@ -19,12 +19,16 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.alfonsochap.bqdropboxapp.R;
+import com.alfonsochap.bqdropboxapp.app.adapter.EpubsAdapter;
 import com.alfonsochap.bqdropboxapp.network.DBApi;
 import com.alfonsochap.bqdropboxapp.preferences.Preferences;
 import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.exception.DropboxException;
 
 public class ListActivity extends AppCompatActivity
@@ -37,6 +41,11 @@ public class ListActivity extends AppCompatActivity
     TextView mTxtUserName;
     TextView mTxtUserEmail;
 
+    ListView mListView;
+    EpubsAdapter mAdapter;
+
+    ProgressBar mPrb;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +55,8 @@ public class ListActivity extends AppCompatActivity
 
         setUpViews();
         setUpUserInterface();
+
+        new LoadFiles().execute();
     }
 
     @Override
@@ -149,6 +160,8 @@ public class ListActivity extends AppCompatActivity
         mTxtUserName = (TextView) findViewById(R.id.txt_user_name);
         mTxtUserEmail = (TextView) findViewById(R.id.txt_user_email);
 
+        mListView = (ListView) findViewById(R.id.listView);
+        mPrb = (ProgressBar) findViewById(R.id.prb);
     }
 
     void setUpUserInterface() {
@@ -181,7 +194,36 @@ public class ListActivity extends AppCompatActivity
             if(mUserAccount != null) {
                 mTxtUserName.setText(mUserAccount.displayName);
                 mTxtUserEmail.setText(mUserAccount.email);
+            }
+        }
+    }
 
+    class LoadFiles extends AsyncTask<Void, Void, Void> {
+
+        Entry entry = null;
+
+        @Override
+        protected void onPreExecute() {
+            mPrb.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                entry = mDBApi.api.metadata("", 0, "", true, "");
+            } catch(Exception e) {
+                Log.v("tag", "Error: " + e.getMessage());
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void arg0) {
+            mPrb.setVisibility(View.GONE);
+
+            if(entry != null) {
+                mAdapter = new EpubsAdapter(ListActivity.this, entry.contents);
+                mListView.setAdapter(mAdapter);
             }
         }
     }
