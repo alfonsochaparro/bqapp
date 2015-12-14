@@ -8,26 +8,25 @@ import com.android.volley.toolbox.Volley;
 
 public class NetworkQueue {
 
-    private static NetworkQueue mInstance;
+    private static NetworkQueue sInstance;
     private RequestQueue mRequestQueue;
-    private static Context mCtx;
+    private static Context sContext;
 
     private NetworkQueue(Context context) {
-        mCtx = context;
+        sContext = context;
         mRequestQueue = getRequestQueue();
-
     }
 
     public static synchronized NetworkQueue getmInstance(Context context) {
-        if(mInstance == null) {
-            mInstance = new NetworkQueue(context);
+        if(sInstance == null) {
+            sInstance = new NetworkQueue(context);
         }
-        return mInstance;
+        return sInstance;
     }
 
     public RequestQueue getRequestQueue() {
         if(mRequestQueue == null) {
-            mRequestQueue = Volley.newRequestQueue(mCtx.getApplicationContext());
+            mRequestQueue = Volley.newRequestQueue(sContext.getApplicationContext());
         }
         return  mRequestQueue;
     }
