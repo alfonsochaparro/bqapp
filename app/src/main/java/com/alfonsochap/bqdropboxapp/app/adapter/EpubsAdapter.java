@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.alfonsochap.bqdropboxapp.R;
@@ -18,14 +19,22 @@ import java.util.List;
 /**
  * Created by Alfonso on 14/12/2015.
  */
-public class EpubsAdapter extends BaseAdapter {
-    private Activity activity;
+public class EpubsAdapter extends BaseAdapter {;
+    private Context mContext;
     private LayoutInflater inflater;
     private List<Entry> mItems;
 
-    public EpubsAdapter(Activity activity, List<Entry> movieItems) {
-        this.activity = activity;
-        this.mItems = movieItems;
+    public EpubsAdapter(Context context, List<Entry> items) {
+        mContext = context;
+        mItems = items;
+    }
+
+    public void setItems(List<Entry> items) {
+        mItems = items;
+    }
+
+    public void clear() {
+        mItems.clear();
     }
 
     @Override
@@ -45,16 +54,16 @@ public class EpubsAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-
         if (inflater == null)
-            inflater = (LayoutInflater) activity
-                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            inflater = LayoutInflater.from(mContext);
         if (convertView == null)
             convertView = inflater.inflate(R.layout.layout_item_list, null);
 
         TextView txt = (TextView) convertView.findViewById(R.id.txt);
+        ImageView img = (ImageView) convertView.findViewById(R.id.img);
 
         txt.setText(mItems.get(position).fileName());
+        img.setImageResource(mItems.get(position).isDir ? R.drawable.folder : R.drawable.epub);
         return convertView;
     }
 

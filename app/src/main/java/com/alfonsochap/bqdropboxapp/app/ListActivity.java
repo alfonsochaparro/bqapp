@@ -18,6 +18,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -31,8 +32,11 @@ import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.exception.DropboxException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ListActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, AdapterView.OnItemClickListener {
 
     DBApi mDBApi;
     DropboxAPI.Account mUserAccount;
@@ -46,6 +50,8 @@ public class ListActivity extends AppCompatActivity
 
     ProgressBar mPrb;
 
+    List<String> path = new ArrayList<String>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,7 +62,7 @@ public class ListActivity extends AppCompatActivity
         setUpViews();
         setUpUserInterface();
 
-        new LoadFiles().execute();
+        navigateTo("");
     }
 
     @Override
@@ -64,9 +70,12 @@ public class ListActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
+        } else if(path.size() > 1){
+            navigateTo(path.size() - 2);
         } else {
             super.onBackPressed();
         }
+
     }
 
     @Override
@@ -104,6 +113,34 @@ public class ListActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+
+
+    // Item click listener
+
+    @Override
+    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+        Entry entry = (Entry)adapterView.getItemAtPosition(i);
+        if(entry.isDir) navigateTo(entry.path);
+    }
+
+
+
+    // Navigation methods
+
+    void navigateTo(int index) {
+        String folder = path.get(index);
+        while(path.size() > index) {
+            path.remove(index);
+        }
+        navigateTo(folder);
+    }
+
+    void navigateTo(String folder) {
+        path.add(folder);
+
+        new LoadFiles().execute(folder);
     }
 
 
@@ -161,7 +198,11 @@ public class ListActivity extends AppCompatActivity
         mTxtUserEmail = (TextView) findViewById(R.id.txt_user_email);
 
         mListView = (ListView) findViewById(R.id.listView);
+        mAdapter = new EpubsAdapter(ListActivity.this, new ArrayList<Entry>());
         mPrb = (ProgressBar) findViewById(R.id.prb);
+
+        mListView.setAdapter(mAdapter);
+        mListView.setOnItemClickListener(this);
     }
 
     void setUpUserInterface() {
@@ -198,19 +239,22 @@ public class ListActivity extends AppCompatActivity
         }
     }
 
-    class LoadFiles extends AsyncTask<Void, Void, Void> {
+    class LoadFiles extends AsyncTask<String, Void, Void> {
 
         Entry entry = null;
 
         @Override
         protected void onPreExecute() {
             mPrb.setVisibility(View.VISIBLE);
+
+            mAdapter.clear();
+            mAdapter.notifyDataSetChanged();
         }
 
         @Override
-        protected Void doInBackground(Void... params) {
+        protected Void doInBackground(String... params) {
             try {
-                entry = mDBApi.api.metadata("", 0, "", true, "");
+                entry = mDBApi.api.metadata(params[0], 0, "", true, "");
             } catch(Exception e) {
                 Log.v("tag", "Error: " + e.getMessage());
             }
@@ -222,8 +266,8 @@ public class ListActivity extends AppCompatActivity
             mPrb.setVisibility(View.GONE);
 
             if(entry != null) {
-                mAdapter = new EpubsAdapter(ListActivity.this, entry.contents);
-                mListView.setAdapter(mAdapter);
+                mAdapter.setItems(entry.contents);
+                mAdapter.notifyDataSetChanged();
             }
         }
     }
