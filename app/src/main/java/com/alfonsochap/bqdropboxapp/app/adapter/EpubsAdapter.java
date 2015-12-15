@@ -18,9 +18,12 @@ import com.alfonsochap.bqdropboxapp.app.model.EpubModel;
 import com.alfonsochap.bqdropboxapp.network.DBApi;
 import com.alfonsochap.bqdropboxapp.preferences.Preferences;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 import nl.siegmann.epublib.domain.Book;
 import nl.siegmann.epublib.epub.EpubReader;
@@ -37,6 +40,9 @@ public class EpubsAdapter extends BaseAdapter {;
     private int mFolderIcon;
     private int mEpubIcon;
 
+    private SimpleDateFormat mDateFormatInput = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
+    private SimpleDateFormat mDateFormatOutput = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+
     public EpubsAdapter(Context context, List<EpubModel> items) {
         mContext = context;
         mItems = items;
@@ -45,26 +51,12 @@ public class EpubsAdapter extends BaseAdapter {;
     }
 
     public void setItems(List<EpubModel> items) {
-        mItems = items;
+        mItems.clear();
+        mItems.addAll(items);
     }
 
-    public void sort() {
-        Collections.sort(mItems, new Comparator<EpubModel>() {
-            @Override
-            public int compare(EpubModel lhs, EpubModel rhs) {
-                if (Preferences.getSortMode() == Preferences.SORT_NAME) {
-                    String name1 = lhs.getBook() == null ?
-                            lhs.getEntry().fileName() : lhs.getBook().getTitle();
-
-                    String name2 = rhs.getBook() == null ?
-                            rhs.getEntry().fileName() : rhs.getBook().getTitle();
-
-                    return name1.compareTo(name2);
-                }
-
-                return lhs.getEntry().modified.compareTo(rhs.getEntry().modified);
-            }
-        });
+    public List<EpubModel> getItems() {
+        return mItems;
     }
 
     public void clear() {
@@ -102,25 +94,50 @@ public class EpubsAdapter extends BaseAdapter {;
             inflater = LayoutInflater.from(mContext);
         if (convertView == null || ((Integer)convertView.getTag()) != mViewMode) {
             convertView = inflater.inflate(mViewMode == Preferences.VIEW_LIST ?
-                    R.layout.layout_item_list : R.layout.layout_item_grid, null);
+                    R.layout.layout_item_list : R.layout.layout_item_grid, parent, false);
 
             convertView.setTag(mViewMode);
 
             new LoadBook(convertView, mItems.get(position))
                     .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
-
+        else {
+            fillView(convertView, mItems.get(position));
+        }
         return convertView;
+    }
+
+    private void fillView(View view, EpubModel item) {
+        TextView txt = (TextView) view.findViewById(R.id.txt);
+        TextView txt2 = (TextView) view.findViewById(R.id.txt2);
+        ImageView img = (ImageView) view.findViewById(R.id.img);
+
+        if(item.getBook() == null) {
+            // Showing metadata info if book data has not been downloaded
+
+            txt.setText(item.getEntry().fileName());
+            img.setImageResource(item.getEntry().isDir ? mFolderIcon : mEpubIcon);
+        }
+        else {
+            txt.setText(item.getBook().getTitle());
+            try {
+                Bitmap bmp = BitmapFactory.decodeStream(item.getBook().getCoverImage().getInputStream());
+                img.setImageBitmap(bmp);
+            } catch (Exception e) {
+                img.setImageResource(mEpubIcon);
+            }
+        }
+
+        try {
+            txt2.setText(mDateFormatOutput.format(mDateFormatInput.parse(item.getEntry().modified)));
+        } catch (ParseException e) {
+            Log.v("tag", "Error: " + e.getMessage());
+        }
     }
 
     class LoadBook extends AsyncTask<Void, Void, Void> {
         View view;
         EpubModel item;
-
-        TextView txt;
-        ImageView img;
-
-        Bitmap bmp;
 
         public LoadBook(View view, EpubModel item) {
             this.view = view;
@@ -129,13 +146,7 @@ public class EpubsAdapter extends BaseAdapter {;
 
         @Override
         protected void onPreExecute() {
-            txt = (TextView) view.findViewById(R.id.txt);
-            img = (ImageView) view.findViewById(R.id.img);
-
-            if(item.getBook() == null) {
-                txt.setText(item.getEntry().fileName());
-                img.setImageResource(item.getEntry().isDir ? mFolderIcon : mEpubIcon);
-            }
+            fillView(view, item);
         }
 
         @Override
@@ -146,8 +157,6 @@ public class EpubsAdapter extends BaseAdapter {;
                             .getFileStream(item.getEntry().path, ""));
                     item.setBook(book);
                 }
-                bmp = BitmapFactory.decodeStream(item.getBook().getCoverImage().getInputStream());
-
             } catch (Exception e) {
                 Log.v("tag", "Error: " + e.getMessage());
             }
@@ -157,11 +166,7 @@ public class EpubsAdapter extends BaseAdapter {;
         @Override
         protected void onPostExecute(Void arg0) {
             if(item.getBook() != null) {
-                txt.setText(item.getBook().getTitle());
-
-                if(bmp != null) {
-                    img.setImageBitmap(bmp);
-                }
+                fillView(view, item);
             }
         }
     }

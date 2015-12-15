@@ -8,10 +8,23 @@
     tools:context="com.alfonsochap.bqdropboxapp.app.DetailsActivity"
     tools:showIn="@layout/activity_details">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <android.support.v7.widget.CardView
+        xmlns:card_view="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/card_view"
+        android:layout_gravity="center"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="@dimen/text_margin"
-        android:text="@string/large_text" />
+        card_view:cardCornerRadius="2dp"
+        card_view:cardBackgroundColor="@android:color/white"
+        card_view:cardElevation="2dp">
+
+        <TextView
+            android:id="@+id/txtAuthor"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="4dp"
+            android:textSize="15sp" />
+
+    </android.support.v7.widget.CardView>
 
 </android.support.v4.widget.NestedScrollView>

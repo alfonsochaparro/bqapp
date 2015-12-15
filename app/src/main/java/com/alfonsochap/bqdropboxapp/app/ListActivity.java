@@ -40,6 +40,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import nl.siegmann.epublib.domain.Book;
@@ -219,8 +221,28 @@ public class ListActivity extends AppCompatActivity
 
     void sort() {
         Preferences.setSortMode(Preferences.getSortMode() == Preferences.SORT_DATE ?
-            Preferences.SORT_NAME : Preferences.SORT_DATE);
-        mAdapter.sort();
+                Preferences.SORT_NAME : Preferences.SORT_DATE);
+
+        List<EpubModel> items = new ArrayList<>(mAdapter.getItems());
+
+        Collections.sort(items, new Comparator<EpubModel>() {
+            @Override
+            public int compare(EpubModel lhs, EpubModel rhs) {
+                if (Preferences.getSortMode() == Preferences.SORT_NAME) {
+                    String name1 = lhs.getBook() == null ?
+                            lhs.getEntry().fileName() : lhs.getBook().getTitle();
+
+                    String name2 = rhs.getBook() == null ?
+                            rhs.getEntry().fileName() : rhs.getBook().getTitle();
+
+                    return name1.compareTo(name2);
+                }
+
+                return lhs.getEntry().modified.compareTo(rhs.getEntry().modified);
+            }
+        });
+
+        mAdapter.setItems(items);
         mAdapter.notifyDataSetChanged();
     }
 
@@ -322,7 +344,6 @@ public class ListActivity extends AppCompatActivity
 
             if(entries.size() > 0) {
                 mAdapter.setItems(items);
-                mAdapter.sort();
                 mAdapter.notifyDataSetChanged();
             }
             else {
