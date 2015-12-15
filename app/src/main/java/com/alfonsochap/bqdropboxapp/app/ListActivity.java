@@ -97,6 +97,9 @@ public class ListActivity extends AppCompatActivity
         // Inflate the menu; this adds items to the action bar if it is present.
         mMenu = menu;
         getMenuInflater().inflate(R.menu.list, menu);
+
+        updateView();
+
         return true;
     }
 
@@ -183,6 +186,12 @@ public class ListActivity extends AppCompatActivity
 
     void refreshGridViewMode() {
         mGridView.setNumColumns(Preferences.getViewMode() == Preferences.VIEW_LIST ? 1 : 3);
+
+        if(mMenu != null) {
+            mMenu.findItem(R.id.action_view).setIcon(getResources().getDrawable(
+                    Preferences.getViewMode() == Preferences.VIEW_LIST ?
+                            R.drawable.ic_action_action_grid : R.drawable.ic_action_action_list));
+        }
     }
 
     // Item click listener
@@ -203,6 +212,7 @@ public class ListActivity extends AppCompatActivity
         Preferences.setViewMode(Preferences.getViewMode() == Preferences.VIEW_LIST ?
             Preferences.VIEW_GRID : Preferences.VIEW_LIST);
 
+        refreshGridViewMode();
         mAdapter.updateViewMode();
         mAdapter.notifyDataSetChanged();
     }

@@ -10,6 +10,6 @@
     <color name="gray">#b9b9b9</color>
 
     <color name="gradient_1">#00000000</color>
-    <color name="gradient_2">#22000000</color>
-    <color name="gradient_3">#44000000</color>
+    <color name="gradient_2">#44000000</color>
+    <color name="gradient_3">#88000000</color>
 </resources>
