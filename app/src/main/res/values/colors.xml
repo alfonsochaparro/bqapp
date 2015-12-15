@@ -6,4 +6,6 @@
 
     <color name="listBackground">#F5F5F5</color>
     <color name="listBackgroundHighlight">#E0E0E0</color>
+
+    <color name="gray">#b9b9b9</color>
 </resources>

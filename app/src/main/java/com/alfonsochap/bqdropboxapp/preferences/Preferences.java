@@ -8,6 +8,12 @@ import android.content.SharedPreferences;
  */
 public class Preferences {
 
+    public static final int VIEW_LIST = 0;
+    public static final int VIEW_GRID = 1;
+
+    public static final int SORT_NAME = 0;
+    public static final int SORT_DATE = 1;
+
     private static final String SP_NAME = "prefs";
 
     static SharedPreferences sp;
@@ -33,4 +39,9 @@ public class Preferences {
     }
 
 
+    public static int getSortMode() { return sp.getInt("sort", SORT_NAME); }
+    public static void setSortMode(int sortMode) { sp.edit().putInt("sort", sortMode).commit(); }
+
+    public static int getViewMode() { return sp.getInt("view", VIEW_LIST); }
+    public static void setViewMode(int viewMode) { sp.edit().putInt("view", viewMode).commit(); }
 }

@@ -13,8 +13,12 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
+    <string name="no_results">No se encontró ningún ebook</string>
+
     <string name="action_logout">Cerrar sesión</string>
     <string name="action_settings">Settings</string>
+    <string name="action_view">Vista</string>
+    <string name="action_sort">Ordenar</string>
 
     <string name="logout_alert">¿Seguro que quieres cerrar la sesión con el usuario actual?</string>
 

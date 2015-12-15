@@ -64,7 +64,7 @@ public class DetailsActivity extends AppCompatActivity {
             // Log the book's coverimage property
 
             Bitmap coverImage = BitmapFactory.decodeStream(mBook.getCoverImage().getInputStream());
-            getSupportActionBar().setBackgroundDrawable(new BitmapDrawable(coverImage));
+            mToolBarLayout.setBackgroundDrawable(new BitmapDrawable(coverImage));
 
 
             // Log the tale of contents
