@@ -5,7 +5,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alfonsochap.bqdropboxapp.R;
@@ -19,18 +22,22 @@ public class MainActivity extends AppCompatActivity {
 
     private DBApi mDBApi;
 
-    private Button mBtnLogin;
+    private ImageView mImgLogo;
+    private TextView mBtnLogin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        getSupportActionBar().hide();
+
         Preferences.init(getApplicationContext());
 
         mDBApi = DBApi.getInstance(this);
 
-        mBtnLogin = (Button) findViewById(R.id.btn_login);
+        mImgLogo = (ImageView) findViewById(R.id.imgLogo);
+        mBtnLogin = (TextView) findViewById(R.id.btnLogin);
 
         initAnimation();
     }
@@ -45,8 +52,6 @@ public class MainActivity extends AppCompatActivity {
                 mDBApi.api.getSession().finishAuthentication();
                 String accessToken = mDBApi.api.getSession().getOAuth2AccessToken();
 
-
-
                 Preferences.setToken(accessToken);
 
                 goForward();
@@ -58,10 +63,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void initAnimation() {
-        // TODO
-
-
-        checkDropBoxSession();
+        mImgLogo.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                checkDropBoxSession();
+            }
+        }, 2000);
     }
 
     void checkDropBoxSession() {
@@ -70,7 +77,8 @@ public class MainActivity extends AppCompatActivity {
             goForward();
         }
         else {
-            mBtnLogin.animate().alpha(1f).setDuration(500);
+            mImgLogo.animate().scaleX(0.9f).scaleY(0.9f).setInterpolator(new AccelerateInterpolator()).setDuration(150);
+            mBtnLogin.setVisibility(View.VISIBLE);
             mBtnLogin.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {

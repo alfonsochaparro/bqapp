@@ -27,4 +27,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.2.1'
     compile 'com.mcxiaoke.volley:library:1.0.+'
     compile 'com.android.support:design:22.2.1'
+    compile files('libs/epublib-core-latest.jar')
+    compile files('libs/slf4j-api-1.6.6.jar')
 }

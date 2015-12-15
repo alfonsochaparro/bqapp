@@ -1,6 +1,7 @@
 package com.alfonsochap.bqdropboxapp.app;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -29,17 +30,28 @@ import com.alfonsochap.bqdropboxapp.app.adapter.EpubsAdapter;
 import com.alfonsochap.bqdropboxapp.network.DBApi;
 import com.alfonsochap.bqdropboxapp.preferences.Preferences;
 import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.DropboxAPI.DropboxInputStream;
 import com.dropbox.client2.DropboxAPI.Entry;
+import com.dropbox.client2.DropboxAPI.Account;
+import com.dropbox.client2.ProgressListener;
 import com.dropbox.client2.exception.DropboxException;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ListActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, AdapterView.OnItemClickListener {
+        implements NavigationView.OnNavigationItemSelectedListener,
+        AdapterView.OnItemClickListener {
 
     DBApi mDBApi;
-    DropboxAPI.Account mUserAccount;
+    Account mUserAccount;
 
     ImageView mImgUserAvatar;
     TextView mTxtUserName;
@@ -75,7 +87,6 @@ public class ListActivity extends AppCompatActivity
         } else {
             super.onBackPressed();
         }
-
     }
 
     @Override
@@ -123,6 +134,10 @@ public class ListActivity extends AppCompatActivity
     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
         Entry entry = (Entry)adapterView.getItemAtPosition(i);
         if(entry.isDir) navigateTo(entry.path);
+        else {
+            //startActivity(new Intent(this, DetailsActivity.class));
+            new LoadFile().execute(entry.path);
+        }
     }
 
 
@@ -185,7 +200,8 @@ public class ListActivity extends AppCompatActivity
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+                this, drawer, toolbar, R.string.navigation_drawer_open,
+                R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
@@ -241,7 +257,7 @@ public class ListActivity extends AppCompatActivity
 
     class LoadFiles extends AsyncTask<String, Void, Void> {
 
-        Entry entry = null;
+        List<Entry> entries;
 
         @Override
         protected void onPreExecute() {
@@ -254,7 +270,9 @@ public class ListActivity extends AppCompatActivity
         @Override
         protected Void doInBackground(String... params) {
             try {
-                entry = mDBApi.api.metadata(params[0], 0, "", true, "");
+                //entry = mDBApi.api.metadata(params[0], 0, "", true, "");
+                entries = mDBApi.api.search(params[0], ".epub", 1000, false);
+
             } catch(Exception e) {
                 Log.v("tag", "Error: " + e.getMessage());
             }
@@ -265,9 +283,68 @@ public class ListActivity extends AppCompatActivity
         protected void onPostExecute(Void arg0) {
             mPrb.setVisibility(View.GONE);
 
-            if(entry != null) {
-                mAdapter.setItems(entry.contents);
+            if(entries != null) {
+                mAdapter.setItems(entries);
                 mAdapter.notifyDataSetChanged();
+            }
+        }
+    }
+
+    class LoadFile extends AsyncTask<String, Integer, Boolean> {
+        ProgressDialog d;
+
+        @Override
+        protected void onPreExecute() {
+            d = new ProgressDialog(ListActivity.this);
+            d.setMessage(getString(R.string.loading));
+            d.setMax(100);
+            d.setProgress(0);
+            d.show();
+        }
+
+        @Override
+        protected Boolean doInBackground(String... params) {
+            boolean result = true;
+
+            FileOutputStream outputStream = null;
+            try {
+                File file = new File(getFilesDir() + "/tmp");
+                outputStream = new FileOutputStream(file);
+
+                DropboxAPI.DropboxFileInfo info = mDBApi.api.getFile(params[0], null, outputStream,
+                        new ProgressListener() {
+                    @Override
+                    public void onProgress(long l, long l1) {
+                        int progress = (int)((float)(l1 / l) * 100);
+                        publishProgress(progress);
+                    }
+                });
+            } catch (Exception e) {
+                Log.v("tag", "Error: " + e.getMessage());
+                result = false;
+            } finally {
+                if (outputStream != null) {
+                    try {
+                        outputStream.close();
+                    } catch (IOException e) {}
+                }
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... params) {
+            Log.v("tag", "Progreso: " + params[0]);
+            d.setProgress(params[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Boolean arg0) {
+            d.dismiss();
+
+            if(arg0) {
+                startActivity(new Intent(ListActivity.this, DetailsActivity.class));
             }
         }
     }
