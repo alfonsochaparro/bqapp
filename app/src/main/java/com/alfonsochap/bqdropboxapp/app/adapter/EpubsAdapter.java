@@ -33,9 +33,15 @@ public class EpubsAdapter extends BaseAdapter {;
     private LayoutInflater inflater;
     private List<EpubModel> mItems;
 
+    private int mViewMode;
+    private int mFolderIcon;
+    private int mEpubIcon;
+
     public EpubsAdapter(Context context, List<EpubModel> items) {
         mContext = context;
         mItems = items;
+
+        updateViewMode();
     }
 
     public void setItems(List<EpubModel> items) {
@@ -46,9 +52,12 @@ public class EpubsAdapter extends BaseAdapter {;
         Collections.sort(mItems, new Comparator<EpubModel>() {
             @Override
             public int compare(EpubModel lhs, EpubModel rhs) {
-                if(Preferences.getSortMode() == Preferences.SORT_NAME) {
-                    String name1 = lhs.getBook() == null ? lhs.getEntry().fileName() : lhs.getBook().getTitle();
-                    String name2 = rhs.getBook() == null ? rhs.getEntry().fileName() : rhs.getBook().getTitle();
+                if (Preferences.getSortMode() == Preferences.SORT_NAME) {
+                    String name1 = lhs.getBook() == null ?
+                            lhs.getEntry().fileName() : lhs.getBook().getTitle();
+
+                    String name2 = rhs.getBook() == null ?
+                            rhs.getEntry().fileName() : rhs.getBook().getTitle();
 
                     return name1.compareTo(name2);
                 }
@@ -60,6 +69,16 @@ public class EpubsAdapter extends BaseAdapter {;
 
     public void clear() {
         mItems.clear();
+    }
+
+    public void updateViewMode() {
+        mViewMode = Preferences.getViewMode();
+
+        mFolderIcon = mViewMode == Preferences.VIEW_LIST ?
+                R.drawable.folder : R.drawable.folder_big;
+
+        mEpubIcon = mViewMode == Preferences.VIEW_LIST ?
+                R.drawable.epub : R.drawable.epub_big;
     }
 
     @Override
@@ -81,10 +100,14 @@ public class EpubsAdapter extends BaseAdapter {;
     public View getView(int position, View convertView, ViewGroup parent) {
         if (inflater == null)
             inflater = LayoutInflater.from(mContext);
-        if (convertView == null) {
-            convertView = inflater.inflate(R.layout.layout_item_list, null);
+        if (convertView == null || ((Integer)convertView.getTag()) != mViewMode) {
+            convertView = inflater.inflate(mViewMode == Preferences.VIEW_LIST ?
+                    R.layout.layout_item_list : R.layout.layout_item_grid, null);
 
-            new LoadBook(convertView, mItems.get(position)).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            convertView.setTag(mViewMode);
+
+            new LoadBook(convertView, mItems.get(position))
+                    .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
 
         return convertView;
@@ -111,23 +134,22 @@ public class EpubsAdapter extends BaseAdapter {;
 
             if(item.getBook() == null) {
                 txt.setText(item.getEntry().fileName());
-                img.setImageResource(item.getEntry().isDir ? R.drawable.folder : R.drawable.epub);
+                img.setImageResource(item.getEntry().isDir ? mFolderIcon : mEpubIcon);
             }
         }
 
         @Override
         protected Void doInBackground(Void... params) {
-            if(item.getBook() == null && !item.getEntry().isDir) {
-                try {
+            try {
+                if(item.getBook() == null && !item.getEntry().isDir) {
                     Book book = (new EpubReader()).readEpub(DBApi.getInstance(mContext).api
                             .getFileStream(item.getEntry().path, ""));
                     item.setBook(book);
-
-                    bmp = BitmapFactory.decodeStream(item.getBook().getCoverImage().getInputStream());
-
-                } catch (Exception e) {
-                    Log.v("tag", "Error: " + e.getMessage());
                 }
+                bmp = BitmapFactory.decodeStream(item.getBook().getCoverImage().getInputStream());
+
+            } catch (Exception e) {
+                Log.v("tag", "Error: " + e.getMessage());
             }
             return null;
         }
