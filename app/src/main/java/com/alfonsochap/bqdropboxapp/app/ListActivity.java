@@ -151,8 +151,10 @@ public class ListActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                /*
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                        .setAction("Action", null).show();*/
+                pickFile();
             }
         });
 
@@ -196,6 +198,7 @@ public class ListActivity extends AppCompatActivity
         }
     }
 
+
     // Item click listener
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
@@ -206,7 +209,6 @@ public class ListActivity extends AppCompatActivity
             new LoadFile().execute(item.getEntry().path);
         }
     }
-
 
 
     // View and sort
@@ -223,28 +225,10 @@ public class ListActivity extends AppCompatActivity
         Preferences.setSortMode(Preferences.getSortMode() == Preferences.SORT_DATE ?
                 Preferences.SORT_NAME : Preferences.SORT_DATE);
 
-        List<EpubModel> items = new ArrayList<>(mAdapter.getItems());
-
-        Collections.sort(items, new Comparator<EpubModel>() {
-            @Override
-            public int compare(EpubModel lhs, EpubModel rhs) {
-                if (Preferences.getSortMode() == Preferences.SORT_NAME) {
-                    String name1 = lhs.getBook() == null ?
-                            lhs.getEntry().fileName() : lhs.getBook().getTitle();
-
-                    String name2 = rhs.getBook() == null ?
-                            rhs.getEntry().fileName() : rhs.getBook().getTitle();
-
-                    return name1.compareTo(name2);
-                }
-
-                return lhs.getEntry().modified.compareTo(rhs.getEntry().modified);
-            }
-        });
-
-        mAdapter.setItems(items);
+        mAdapter.sort();
         mAdapter.notifyDataSetChanged();
     }
+
 
     // Navigation methods
     void navigateTo(int index) {
@@ -261,6 +245,11 @@ public class ListActivity extends AppCompatActivity
         new LoadFiles().execute(folder);
     }
 
+
+    // Upload file methods
+    void pickFile() {
+        // TODO
+    }
 
     // Session methods
     void logoutDialog() {
@@ -370,8 +359,8 @@ public class ListActivity extends AppCompatActivity
 
             FileOutputStream outputStream = null;
             try {
-                File file = new File(getFilesDir() + "/tmp");
-                outputStream = new FileOutputStream(file);
+                //new File(getFilesDir() + "/tmp").createNewFile();
+                outputStream = openFileOutput("tmp", MODE_WORLD_READABLE);
 
                 DropboxAPI.DropboxFileInfo info = mDBApi.api.getFile(params[0], null, outputStream,
                         new ProgressListener() {

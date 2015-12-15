@@ -114,6 +114,10 @@
         "For example, position the FAB to one side of stream of a cards so the FAB won’t interfere "
         "when a user tries to pick up one of cards.\n\n"
     </string>
+    <string name="open_with">Abrir con...</string>
+    <string name="no_apps">No tienes ninguna app que pueda abrir archivos .epub</string>
+    <string name="author">Autor</string>
+    <string name="no_info">Sin información</string>
 
     <!-- Others -->
     <string name="loading">Cargando...</string>

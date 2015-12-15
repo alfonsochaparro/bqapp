@@ -63,6 +63,25 @@ public class EpubsAdapter extends BaseAdapter {;
         mItems.clear();
     }
 
+    public void sort() {
+        Collections.sort(mItems, new Comparator<EpubModel>() {
+            @Override
+            public int compare(EpubModel lhs, EpubModel rhs) {
+                if (Preferences.getSortMode() == Preferences.SORT_NAME) {
+                    String name1 = lhs.getBook() == null ?
+                            lhs.getEntry().fileName() : lhs.getBook().getTitle();
+
+                    String name2 = rhs.getBook() == null ?
+                            rhs.getEntry().fileName() : rhs.getBook().getTitle();
+
+                    return name1.compareTo(name2);
+                }
+
+                return lhs.getEntry().modified.compareTo(rhs.getEntry().modified);
+            }
+        });
+    }
+
     public void updateViewMode() {
         mViewMode = Preferences.getViewMode();
 
