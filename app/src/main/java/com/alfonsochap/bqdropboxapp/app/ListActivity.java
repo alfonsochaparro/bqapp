@@ -2,12 +2,14 @@ package com.alfonsochap.bqdropboxapp.app;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -21,15 +23,17 @@ import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.alfonsochap.bqdropboxapp.R;
 import com.alfonsochap.bqdropboxapp.app.adapter.EpubsAdapter;
+import com.alfonsochap.bqdropboxapp.app.config.Constants;
 import com.alfonsochap.bqdropboxapp.app.model.EpubModel;
+import com.alfonsochap.bqdropboxapp.app.util.Util;
 import com.alfonsochap.bqdropboxapp.network.DBApi;
-import com.alfonsochap.bqdropboxapp.preferences.Preferences;
+import com.alfonsochap.bqdropboxapp.app.config.Preferences;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.DropboxAPI.Account;
@@ -37,14 +41,14 @@ import com.dropbox.client2.ProgressListener;
 import com.dropbox.client2.exception.DropboxException;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
-import nl.siegmann.epublib.domain.Book;
 import nl.siegmann.epublib.epub.EpubReader;
 
 public class ListActivity extends AppCompatActivity
@@ -60,6 +64,7 @@ public class ListActivity extends AppCompatActivity
     TextView mTxtUserName;
     TextView mTxtUserEmail;
 
+    SwipeRefreshLayout mSwipeRefresh;
     GridView mGridView;
     EpubsAdapter mAdapter;
 
@@ -92,6 +97,13 @@ public class ListActivity extends AppCompatActivity
         } else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        mAdapter.clearTasks();
     }
 
     @Override
@@ -173,6 +185,7 @@ public class ListActivity extends AppCompatActivity
         mTxtUserName = (TextView) findViewById(R.id.txt_user_name);
         mTxtUserEmail = (TextView) findViewById(R.id.txt_user_email);
 
+        mSwipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipeRefresh);
         mGridView = (GridView) findViewById(R.id.gridView);
         mAdapter = new EpubsAdapter(ListActivity.this, new ArrayList<EpubModel>());
         mPrb = (ProgressBar) findViewById(R.id.prb);
@@ -180,6 +193,14 @@ public class ListActivity extends AppCompatActivity
 
         mGridView.setAdapter(mAdapter);
         mGridView.setOnItemClickListener(this);
+
+        mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                mSwipeRefresh.setRefreshing(false);
+                navigateToCurrent();
+            }
+        });
 
         refreshGridViewMode();
     }
@@ -227,6 +248,9 @@ public class ListActivity extends AppCompatActivity
 
         mAdapter.sort();
         mAdapter.notifyDataSetChanged();
+
+        Toast.makeText(this, Preferences.getSortMode() == Preferences.SORT_DATE ?
+                R.string.order_date : R.string.order_name, Toast.LENGTH_SHORT).show();
     }
 
 
@@ -245,11 +269,27 @@ public class ListActivity extends AppCompatActivity
         new LoadFiles().execute(folder);
     }
 
+    void navigateToCurrent() {
+        navigateTo(path.size() - 1);
+    }
+
 
     // Upload file methods
     void pickFile() {
-        // TODO
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType(Constants.FILE_MIME);
+        startActivityForResult(intent, 0);
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            Uri uri = data.getData();
+            new UploadFile().execute(uri);
+        }
+    }
+
 
     // Session methods
     void logoutDialog() {
@@ -316,7 +356,7 @@ public class ListActivity extends AppCompatActivity
         protected Void doInBackground(String... params) {
             try {
                 EpubReader reader = new EpubReader();
-                entries = mDBApi.api.search(params[0], ".epub", 1000, false);
+                entries = mDBApi.api.search(params[0], Constants.FILE_EXT, 1000, false);
 
                 for(Entry entry: entries) {
                     items.add(new EpubModel(entry, null));
@@ -331,7 +371,7 @@ public class ListActivity extends AppCompatActivity
         protected void onPostExecute(Void arg0) {
             mPrb.setVisibility(View.GONE);
 
-            if(entries.size() > 0) {
+            if(entries != null && entries.size() > 0) {
                 mAdapter.setItems(items);
                 mAdapter.notifyDataSetChanged();
             }
@@ -360,7 +400,7 @@ public class ListActivity extends AppCompatActivity
             FileOutputStream outputStream = null;
             try {
                 //new File(getFilesDir() + "/tmp").createNewFile();
-                outputStream = openFileOutput("tmp", MODE_WORLD_READABLE);
+                outputStream = openFileOutput(Constants.FILE_TMP, MODE_WORLD_READABLE);
 
                 DropboxAPI.DropboxFileInfo info = mDBApi.api.getFile(params[0], null, outputStream,
                         new ProgressListener() {
@@ -399,4 +439,67 @@ public class ListActivity extends AppCompatActivity
             }
         }
     }
+
+    class UploadFile extends AsyncTask<Uri, Integer, Boolean> {
+        ProgressDialog d;
+
+        @Override
+        protected void onPreExecute() {
+            d = new ProgressDialog(ListActivity.this);
+            d.setMessage(getString(R.string.loading));
+            d.setMax(100);
+            d.setProgress(0);
+            d.show();
+        }
+
+        @Override
+        protected Boolean doInBackground(Uri... params) {
+            boolean result = true;
+
+            FileOutputStream outputStream = null;
+            try {
+                Uri uri = params[0];
+
+                String path = Util.createFileTmp(getApplicationContext(), uri, Constants.FILE_TMP);
+                String fileName = Util.getFileName(getApplicationContext(), uri);
+
+                File file = new File(path);
+                FileInputStream is = new FileInputStream(file);
+                DropboxAPI.Entry newEntry = mDBApi.api.putFileOverwrite(fileName, is, file.length(), new ProgressListener() {
+                    @Override
+                    public void onProgress(long l, long l1) {
+                        int progress = (int)((float)(l1 / l) * 100);
+                        publishProgress(progress);
+                    }
+                });
+            } catch (Exception e) {
+                Log.v("tag", "Error: " + e.getMessage());
+                result = false;
+            } finally {
+                if (outputStream != null) {
+                    try {
+                        outputStream.close();
+                    } catch (IOException e) {}
+                }
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... params) {
+            Log.v("tag", "Progreso: " + params[0]);
+            d.setProgress(params[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Boolean arg0) {
+            d.dismiss();
+
+            if(arg0) {
+                navigateToCurrent();
+            }
+        }
+    }
+
 }

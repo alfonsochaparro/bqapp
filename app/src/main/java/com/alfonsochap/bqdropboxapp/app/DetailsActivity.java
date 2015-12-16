@@ -11,12 +11,16 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.webkit.MimeTypeMap;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.alfonsochap.bqdropboxapp.R;
+import com.alfonsochap.bqdropboxapp.app.config.Constants;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,18 +32,26 @@ import java.util.List;
 
 import nl.siegmann.epublib.domain.Author;
 import nl.siegmann.epublib.domain.Book;
+import nl.siegmann.epublib.domain.Metadata;
 import nl.siegmann.epublib.domain.Resource;
 import nl.siegmann.epublib.domain.Spine;
 import nl.siegmann.epublib.domain.SpineReference;
 import nl.siegmann.epublib.domain.TOCReference;
+import nl.siegmann.epublib.domain.TableOfContents;
 import nl.siegmann.epublib.epub.EpubReader;
 
 public class DetailsActivity extends AppCompatActivity {
 
-    CollapsingToolbarLayout mToolBarLayout;
     Book mBook;
 
+    CollapsingToolbarLayout mToolBarLayout;
+
+    ImageView mImgHeader;
+    ImageView mImgContent;
+
+    TextView mTxtTitle;
     TextView mTxtAuthor;
+    TextView mTxtContent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,9 +62,19 @@ public class DetailsActivity extends AppCompatActivity {
         readBook();
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        finish();
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
+
     void initViews() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         mToolBarLayout = (CollapsingToolbarLayout) findViewById(R.id.toolbar_layout);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -63,39 +85,56 @@ public class DetailsActivity extends AppCompatActivity {
             }
         });
 
+        mImgHeader = (ImageView) findViewById(R.id.imgHeader);
+        mImgContent = (ImageView) findViewById(R.id.imgContent);
+
+        mTxtTitle = (TextView) findViewById(R.id.txtTitle);
         mTxtAuthor = (TextView) findViewById(R.id.txtAuthor);
+        mTxtContent = (TextView) findViewById(R.id.txtContent);
     }
 
     void readBook() {
         try {
             // find InputStream for book
-            InputStream epubInputStream = openFileInput("tmp");
+            InputStream epubInputStream = openFileInput(Constants.FILE_TMP);
 
             // Load Book from inputStream
             mBook = (new EpubReader()).readEpub(epubInputStream);
 
             // Log the book's title
             mToolBarLayout.setTitle(mBook.getTitle());
+            mTxtTitle.setText(mBook.getTitle());
 
             // Log the book's coverimage property
-            Bitmap coverImage = BitmapFactory.decodeStream(mBook.getCoverImage().getInputStream());
-            mToolBarLayout.setBackgroundDrawable(new BitmapDrawable(coverImage));
-
-            StringBuilder sb = new StringBuilder();
-            for(Author author: mBook.getMetadata().getAuthors()) {
-                sb.append(author.toString() + ", ");
+            if(mBook.getCoverImage() != null) {
+                Bitmap coverImage = BitmapFactory.decodeStream(mBook.getCoverImage()
+                        .getInputStream());
+                mImgHeader.setImageBitmap(coverImage);
+                mImgContent.setImageBitmap(coverImage);
             }
-            if(sb.length() > 0) {
-                mTxtAuthor.setText(sb.toString().substring(0, sb.length() - 2));
+
+            Metadata metaData = mBook.getMetadata();
+            if(metaData != null) {
+                StringBuilder sb = new StringBuilder();
+                for (Author author : metaData.getAuthors()) {
+                    sb.append(author.toString() + ", ");
+                }
+                if (sb.length() > 0) {
+                    mTxtAuthor.setText(sb.toString().substring(0, sb.length() - 2));
+                } else {
+                    mTxtAuthor.setText(R.string.no_info);
+                }
+
+                if(metaData.getDescriptions().size() > 0) {
+                    mTxtContent.setText(Html.fromHtml(metaData.getDescriptions().get(0)));
+                }
+                else {
+                    mTxtContent.setText(R.string.no_info);
+                }
             }
             else {
                 mTxtAuthor.setText(R.string.no_info);
-            }
-            // Log the tale of contents
-            //mBook.getTableOfContents().getTocReferences()
-            ArrayList<TOCReference> book_list = new ArrayList<TOCReference>(mBook.getTableOfContents().getTocReferences());
-            for(TOCReference content: book_list) {
-
+                mTxtContent.setText(R.string.no_info);
             }
         } catch (Exception e) {
             Log.e("epublib", e.getMessage());
@@ -104,18 +143,15 @@ public class DetailsActivity extends AppCompatActivity {
 
     void openBookDialog() {
         try {
-            File file = getFileStreamPath("tmp");
-
-            // Just example, you should parse file name for extension
+            File file = getFileStreamPath(Constants.FILE_TMP);
 
             Intent intent = new Intent();
             intent.setAction(android.content.Intent.ACTION_VIEW);
-            intent.setDataAndType(Uri.fromFile(file), "application/epub+zip");
+            intent.setDataAndType(Uri.fromFile(file), Constants.FILE_MIME);
 
             startActivity(Intent.createChooser(intent, getString(R.string.open_with)));
         } catch(Exception e) {
             Snackbar.make(mToolBarLayout, R.string.no_apps, Snackbar.LENGTH_LONG)
-                    //.setAction("Action", null).show();
                     .show();
         }
     }

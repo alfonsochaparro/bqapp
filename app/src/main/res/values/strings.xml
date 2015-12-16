@@ -22,6 +22,9 @@
 
     <string name="logout_alert">¿Seguro que quieres cerrar la sesión con el usuario actual?</string>
 
+    <string name="order_name">Ebooks ordenados por nombre</string>
+    <string name="order_date">Ebooks ordenados por fecha</string>
+
     <!-- Details Activity -->
 
     <string name="title_activity_details">Ebook</string>
@@ -116,8 +119,10 @@
     </string>
     <string name="open_with">Abrir con...</string>
     <string name="no_apps">No tienes ninguna app que pueda abrir archivos .epub</string>
+    <string name="title">Título</string>
     <string name="author">Autor</string>
     <string name="no_info">Sin información</string>
+    <string name="content">Contenido</string>
 
     <!-- Others -->
     <string name="loading">Cargando...</string>

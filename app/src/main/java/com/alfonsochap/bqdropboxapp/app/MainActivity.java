@@ -6,17 +6,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.alfonsochap.bqdropboxapp.R;
 import com.alfonsochap.bqdropboxapp.network.DBApi;
-import com.alfonsochap.bqdropboxapp.preferences.Preferences;
-import com.dropbox.client2.DropboxAPI;
-import com.dropbox.client2.android.AndroidAuthSession;
-import com.dropbox.client2.session.AppKeyPair;
+import com.alfonsochap.bqdropboxapp.app.config.Preferences;
 
 public class MainActivity extends AppCompatActivity {
 

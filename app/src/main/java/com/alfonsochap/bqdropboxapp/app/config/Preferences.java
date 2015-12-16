@@ -1,4 +1,4 @@
-package com.alfonsochap.bqdropboxapp.preferences;
+package com.alfonsochap.bqdropboxapp.app.config;
 
 import android.content.Context;
 import android.content.SharedPreferences;
