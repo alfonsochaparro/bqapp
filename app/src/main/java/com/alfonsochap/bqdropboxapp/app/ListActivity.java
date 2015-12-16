@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.View;
@@ -59,6 +60,8 @@ public class ListActivity extends AppCompatActivity
     Account mUserAccount;
 
     Menu mMenu;
+
+    FloatingActionButton mFloatingButton;
 
     ImageView mImgUserAvatar;
     TextView mTxtUserName;
@@ -159,13 +162,10 @@ public class ListActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        mFloatingButton = (FloatingActionButton) findViewById(R.id.fab);
+        mFloatingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                /*
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();*/
                 pickFile();
             }
         });
@@ -224,9 +224,10 @@ public class ListActivity extends AppCompatActivity
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
         EpubModel item = (EpubModel)adapterView.getItemAtPosition(i);
-        if(item.getEntry().isDir) navigateTo(item.getEntry().path);
+        if(item.getEntry().isDir){
+            navigateTo(item.getEntry().path);
+        }
         else {
-            //startActivity(new Intent(this, DetailsActivity.class));
             new LoadFile().execute(item.getEntry().path);
         }
     }
@@ -340,9 +341,9 @@ public class ListActivity extends AppCompatActivity
     }
 
     class LoadFiles extends AsyncTask<String, Void, Void> {
-
         List<Entry> entries;
         List<EpubModel> items = new ArrayList<>();
+
         @Override
         protected void onPreExecute() {
             mPrb.setVisibility(View.VISIBLE);
@@ -371,18 +372,29 @@ public class ListActivity extends AppCompatActivity
         protected void onPostExecute(Void arg0) {
             mPrb.setVisibility(View.GONE);
 
-            if(entries != null && entries.size() > 0) {
-                mAdapter.setItems(items);
-                mAdapter.notifyDataSetChanged();
-            }
-            else {
-                mViewNoResults.setVisibility(View.VISIBLE);
+            if(entries != null) {
+                if (entries.size() > 0) {
+                    mAdapter.setItems(items);
+                    mAdapter.notifyDataSetChanged();
+                } else {
+                    mViewNoResults.setVisibility(View.VISIBLE);
+                }
+            } else {
+                Snackbar.make(mFloatingButton, R.string.error_connection, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.error_connection_action, new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                navigateToCurrent();
+                            }
+                        })
+                        .show();
             }
         }
     }
 
     class LoadFile extends AsyncTask<String, Integer, Boolean> {
         ProgressDialog d;
+        String file;
 
         @Override
         protected void onPreExecute() {
@@ -399,17 +411,12 @@ public class ListActivity extends AppCompatActivity
 
             FileOutputStream outputStream = null;
             try {
-                //new File(getFilesDir() + "/tmp").createNewFile();
+                file = params[0];
+
                 outputStream = openFileOutput(Constants.FILE_TMP, MODE_WORLD_READABLE);
 
-                DropboxAPI.DropboxFileInfo info = mDBApi.api.getFile(params[0], null, outputStream,
-                        new ProgressListener() {
-                    @Override
-                    public void onProgress(long l, long l1) {
-                        int progress = (int)((float)(l1 / l) * 100);
-                        publishProgress(progress);
-                    }
-                });
+                DropboxAPI.DropboxFileInfo info = mDBApi.api.getFile(file, null,
+                        outputStream, null);
             } catch (Exception e) {
                 Log.v("tag", "Error: " + e.getMessage());
                 result = false;
@@ -425,23 +432,28 @@ public class ListActivity extends AppCompatActivity
         }
 
         @Override
-        protected void onProgressUpdate(Integer... params) {
-            Log.v("tag", "Progreso: " + params[0]);
-            d.setProgress(params[0]);
-        }
-
-        @Override
         protected void onPostExecute(Boolean arg0) {
             d.dismiss();
 
             if(arg0) {
                 startActivity(new Intent(ListActivity.this, DetailsActivity.class));
             }
+            else {
+                Snackbar.make(mFloatingButton, R.string.error_connection, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.error_connection_action, new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                new LoadFile().execute(file);
+                            }
+                        })
+                        .show();
+            }
         }
     }
 
     class UploadFile extends AsyncTask<Uri, Integer, Boolean> {
         ProgressDialog d;
+        Uri uri;
 
         @Override
         protected void onPreExecute() {
@@ -458,20 +470,15 @@ public class ListActivity extends AppCompatActivity
 
             FileOutputStream outputStream = null;
             try {
-                Uri uri = params[0];
+                uri = params[0];
 
                 String path = Util.createFileTmp(getApplicationContext(), uri, Constants.FILE_TMP);
                 String fileName = Util.getFileName(getApplicationContext(), uri);
 
                 File file = new File(path);
                 FileInputStream is = new FileInputStream(file);
-                DropboxAPI.Entry newEntry = mDBApi.api.putFileOverwrite(fileName, is, file.length(), new ProgressListener() {
-                    @Override
-                    public void onProgress(long l, long l1) {
-                        int progress = (int)((float)(l1 / l) * 100);
-                        publishProgress(progress);
-                    }
-                });
+                DropboxAPI.Entry newEntry = mDBApi.api.putFileOverwrite(fileName, is,
+                        file.length(), null);
             } catch (Exception e) {
                 Log.v("tag", "Error: " + e.getMessage());
                 result = false;
@@ -487,17 +494,21 @@ public class ListActivity extends AppCompatActivity
         }
 
         @Override
-        protected void onProgressUpdate(Integer... params) {
-            Log.v("tag", "Progreso: " + params[0]);
-            d.setProgress(params[0]);
-        }
-
-        @Override
         protected void onPostExecute(Boolean arg0) {
             d.dismiss();
 
             if(arg0) {
                 navigateToCurrent();
+            }
+            else {
+                Snackbar.make(mFloatingButton, R.string.error_connection, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.error_connection_action, new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                new UploadFile().execute(uri);
+                            }
+                        })
+                        .show();
             }
         }
     }

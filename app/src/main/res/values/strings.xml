@@ -5,7 +5,13 @@
     <string name="dropbox_api_key">g8rpsokv35v3y56</string>
     <string name="dropbox_api_secret">qwnsfjs98f9sluq</string>
 
-    <string name="app_name">BqDropboxApp</string>
+    <string name="app_name">Bq Dropbox App</string>
+
+    <!-- Main Activity -->
+    <string name="login">Iniciar sesión</string>
+    <string name="welcome_message">Bienvenido a Bq Dropbox App</string>
+    <string name="welcome_message_2">Serás redirigido a la web de Dropbox para iniciar sesión
+        con tu usuario, o bien a la app oficial de Dropbox si la tienes instalada en el dispositivo</string>
 
     <!-- List Activity -->
     <string name="title_activity_list">Ebooks disponibles</string>
@@ -24,6 +30,9 @@
 
     <string name="order_name">Ebooks ordenados por nombre</string>
     <string name="order_date">Ebooks ordenados por fecha</string>
+
+    <string name="error_connection">Error al conectar con dropbox</string>
+    <string name="error_connection_action">Reintentar</string>
 
     <!-- Details Activity -->
 

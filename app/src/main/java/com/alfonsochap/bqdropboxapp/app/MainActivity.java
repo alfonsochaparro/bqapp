@@ -17,8 +17,10 @@ public class MainActivity extends AppCompatActivity {
 
     private DBApi mDBApi;
 
-    private ImageView mImgLogo;
-    private TextView mBtnLogin;
+
+    ImageView mImgLogo;
+    View loginForm;
+    TextView mBtnLogin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
         mDBApi = DBApi.getInstance(this);
 
         mImgLogo = (ImageView) findViewById(R.id.imgLogo);
+        loginForm = findViewById(R.id.loginForm);
         mBtnLogin = (TextView) findViewById(R.id.btnLogin);
 
         initAnimation();
@@ -73,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
         }
         else {
             mImgLogo.animate().scaleX(0.9f).scaleY(0.9f).setInterpolator(new AccelerateInterpolator()).setDuration(150);
-            mBtnLogin.setVisibility(View.VISIBLE);
+            loginForm.setVisibility(View.VISIBLE);
             mBtnLogin.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {

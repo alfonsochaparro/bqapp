@@ -11,7 +11,7 @@
     android:background="@color/listBackground">
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_centerInParent="true"
@@ -26,22 +26,48 @@
             android:adjustViewBounds="true"
             android:layout_gravity="center"/>
 
-        <TextView
-            android:id="@+id/btnLogin"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/loginForm"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Login"
-            android:layout_centerInParent="true"
-            android:visibility="gone"
-            android:layout_gravity="center"
-            android:textColor="@color/colorPrimaryDark"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:layout_margin="4dp"
-            android:background="@drawable/clickable"
-            android:textSize="18sp" />
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:text="@string/welcome_message"
+                android:textAppearance="@style/TextAppearance.AppCompat.Title"
+                android:layout_margin="4dp"/>
+
+            <TextView
+                android:id="@+id/btnLogin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/login"
+                android:layout_centerInParent="true"
+                android:layout_gravity="center"
+                android:textColor="@color/colorPrimaryDark"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:layout_marginTop="36dp"
+                android:background="@drawable/clickable"
+                android:textSize="18sp" />
+
+            <TextView
+                android:layout_width="240dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:text="@string/welcome_message_2"
+                android:textSize="12sp"
+                android:layout_marginTop="24dp"/>
+
+        </LinearLayout>
 
     </LinearLayout>
 

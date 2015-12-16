@@ -80,14 +80,12 @@ public class EpubsAdapter extends BaseAdapter {
                     R.layout.layout_item_list : R.layout.layout_item_grid, parent, false);
 
             convertView.setTag(mViewMode);
+        }
 
-            LoadBook task = new LoadBook(convertView, mItems.get(position));
-            mTasks.add(task);
-            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        }
-        else {
-            fillView(convertView, mItems.get(position));
-        }
+        LoadBook task = new LoadBook(convertView, mItems.get(position));
+        mTasks.add(task);
+        task.execute();
+
         return convertView;
     }
 
@@ -127,7 +125,7 @@ public class EpubsAdapter extends BaseAdapter {
                     Date d1 = mDateFormatInput.parse(lhs.getEntry().modified);
                     Date d2 = mDateFormatInput.parse(rhs.getEntry().modified);
 
-                    return d1.compareTo(d2);
+                    return d2.compareTo(d1);
                 } catch (Exception e) {
                     return 0;
                 }
@@ -155,40 +153,6 @@ public class EpubsAdapter extends BaseAdapter {
     }
 
 
-
-    private void fillView(View view, EpubModel item) {
-        if(view != null) {
-            TextView txt = (TextView) view.findViewById(R.id.txt);
-            TextView txt2 = (TextView) view.findViewById(R.id.txt2);
-            ImageView img = (ImageView) view.findViewById(R.id.img);
-
-            if (item.getBook() == null) {
-                // Showing metadata info if book data has not been downloaded
-
-                txt.setText(item.getEntry().fileName());
-                img.setImageResource(item.getEntry().isDir ? mFolderIcon : mEpubIcon);
-            } else {
-                txt.setText(item.getBook().getTitle());
-                try {
-                    Bitmap bmp = BitmapFactory.decodeStream(item.getBook().getCoverImage()
-                            .getInputStream());
-                    img.setImageBitmap(bmp);
-                } catch (Exception e) {
-                    img.setImageResource(mEpubIcon);
-                }
-            }
-
-            try {
-                txt2.setText(mDateFormatOutput.format(mDateFormatInput.parse(
-                        item.getEntry().modified)));
-            } catch (ParseException e) {
-                Log.v("tag", "Error: " + e.getMessage());
-            }
-        }
-    }
-
-
-
     class LoadBook extends AsyncTask<Void, Void, Void> {
         View view;
         EpubModel item;
@@ -200,7 +164,7 @@ public class EpubsAdapter extends BaseAdapter {
 
         @Override
         protected void onPreExecute() {
-            fillView(view, item);
+            fillView();
         }
 
         @Override
@@ -221,7 +185,38 @@ public class EpubsAdapter extends BaseAdapter {
         protected void onPostExecute(Void arg0) {
             if(!isCancelled()) {
                 if (item.getBook() != null) {
-                    fillView(view, item);
+                    fillView();
+                }
+            }
+        }
+
+        private void fillView() {
+            if(view != null) {
+                TextView txt = (TextView) view.findViewById(R.id.txt);
+                TextView txt2 = (TextView) view.findViewById(R.id.txt2);
+                ImageView img = (ImageView) view.findViewById(R.id.img);
+
+                if (item.getBook() == null) {
+                    // Showing metadata info if book data has not been downloaded
+
+                    txt.setText(item.getEntry().fileName());
+                    img.setImageResource(item.getEntry().isDir ? mFolderIcon : mEpubIcon);
+                } else {
+                    txt.setText(item.getBook().getTitle());
+                    try {
+                        Bitmap bmp = BitmapFactory.decodeStream(item.getBook().getCoverImage()
+                                .getInputStream());
+                        img.setImageBitmap(bmp);
+                    } catch (Exception e) {
+                        img.setImageResource(mEpubIcon);
+                    }
+                }
+
+                try {
+                    txt2.setText(mDateFormatOutput.format(mDateFormatInput.parse(
+                            item.getEntry().modified)));
+                } catch (ParseException e) {
+                    Log.v("tag", "Error: " + e.getMessage());
                 }
             }
         }
